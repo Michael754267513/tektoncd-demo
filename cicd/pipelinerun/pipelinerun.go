@@ -61,6 +61,7 @@ func Run(name string, namespace string, pipelineName string) (res bool, err erro
 	}
 	// 判断是否存在
 	piperun, err = tektonClient.TektonV1beta1().PipelineRuns(namespace).Get(context.Background(), name, v1.GetOptions{})
+	klog.Info(err)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = tektonClient.TektonV1beta1().PipelineRuns(namespace).Create(context.Background(), piplinerun, v1.CreateOptions{})

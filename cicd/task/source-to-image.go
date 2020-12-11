@@ -48,13 +48,14 @@ func SourceToImage(name string, namespace string, inputs []v1beta1.TaskResource,
 			Command: []string{"/kaniko/executor"},
 			Args: []string{
 				"--dockerfile=$(params.pathToDockerFile)",
-				"--destination=$(params.imageUrl):$(inputs.params.imageTag)",
-				"--context=/$(params.pathToContext)",
+				//"--destination=$(params.imageUrl):$(inputs.params.imageTag)",
+				"--destination=$(inputs.params.imageTag):shell",
+				"--context=/workspace/cicd/$(inputs.params.pathToContext)",
 			},
 			// TODO
-			Env: []corev1.EnvVar{
-				{Name: "DOCKER_CONFIG", Value: "/builder/home/.docker"},
-			},
+			//Env: []corev1.EnvVar{
+			//	{Name: "DOCKER_CONFIG", Value: "/builder/home/.docker"},
+			//},
 		},
 	})
 

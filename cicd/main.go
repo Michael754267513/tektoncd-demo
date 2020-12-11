@@ -64,7 +64,7 @@ func main() {
 			{
 				Name:        "imageUrl",
 				Description: "Url of image repository",
-				Default:     v1beta1.NewArrayOrString(""),
+				Default:     v1beta1.NewArrayOrString("https://www.michael.com/test"),
 			},
 			{
 				Name:        "imageTag",
@@ -75,17 +75,17 @@ func main() {
 	)
 	// 创建资源
 	if res, err := resource.Resource(name, namespace, resourceType, resourceParams); !res {
-		klog.Info(err)
+		klog.Error(err)
 	}
 	// 创建task
 	if res, err := task.SourceToImage(name, namespace, inputs, outputs, params); !res {
-		klog.Info(err)
+		klog.Error(err)
 	}
 	if res, err := pipeline.BuildPipeline(name, namespace, name); !res {
-		klog.Info(err)
+		klog.Error(err)
 	}
 	if res, err := pipelinerun.Run(name, namespace, name); !res {
-		klog.Info(err)
+		klog.Error(err)
 	}
 
 }
