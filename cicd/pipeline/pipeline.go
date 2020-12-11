@@ -20,12 +20,17 @@ import (
 	"context"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 	"tektoncd-demo/config"
 )
 
-func BuildPipeline(name string, namespace string, taskName string) {
+func BuildPipeline(name string, namespace string, taskName string) (res bool, err error) {
+
+	var (
+		pip *v1beta1.Pipeline
+	)
 
 	// k8s 配置文件
 	restConfig, err := config.GetRestConf()
@@ -41,20 +46,45 @@ func BuildPipeline(name string, namespace string, taskName string) {
 			Namespace: namespace,
 		},
 		Spec: v1beta1.PipelineSpec{
+			Resources: []v1beta1.PipelineDeclaredResource{
+				{
+					Name: name,
+					Type: v1beta1.PipelineResourceTypeGit,
+				},
+			},
 			Tasks: []v1beta1.PipelineTask{
 				{
-					Name: "name",
+					Name: name,
 					TaskRef: &v1beta1.TaskRef{
 						Name: taskName,
+					},
+					Resources: &v1beta1.PipelineTaskResources{
+						Inputs: []v1beta1.PipelineTaskInputResource{
+							{
+								Name:     name,
+								Resource: name,
+							},
+						},
 					},
 				},
 			},
 		},
 	}
-	meta, err := tektonClient.TektonV1beta1().Pipelines(namespace).Create(context.Background(), pipline, v1.CreateOptions{})
+	pip, err = tektonClient.TektonV1beta1().Pipelines(namespace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
-		klog.Fatal(err)
+		if errors.IsNotFound(err) {
+			_, err = tektonClient.TektonV1beta1().Pipelines(namespace).Create(context.Background(), pipline, v1.CreateOptions{})
+			if err != nil {
+				return res, err
+			}
+			return true, err
+		}
+		return res, err
 	}
-	klog.Info(meta)
-
+	pipline.ResourceVersion = pip.ResourceVersion
+	_, err = tektonClient.TektonV1beta1().Pipelines(namespace).Update(context.Background(), pipline, v1.UpdateOptions{})
+	if err != nil {
+		return false, err
+	}
+	return true, err
 }

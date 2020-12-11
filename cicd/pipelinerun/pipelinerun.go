@@ -20,13 +20,17 @@ import (
 	"context"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/klog"
 	"tektoncd-demo/config"
 )
 
-func Run(name string, namespace string, pipelineName string) {
+func Run(name string, namespace string, pipelineName string) (res bool, err error) {
+	var (
+		piperun *v1beta1.PipelineRun
+	)
 
 	// k8s 配置文件
 	restConfig, err := config.GetRestConf()
@@ -42,14 +46,36 @@ func Run(name string, namespace string, pipelineName string) {
 			Namespace: namespace,
 		},
 		Spec: v1beta1.PipelineRunSpec{
+			Resources: []v1beta1.PipelineResourceBinding{
+				{
+					Name: name,
+					ResourceRef: &v1beta1.PipelineResourceRef{
+						Name: name,
+					},
+				},
+			},
 			PipelineRef: &v1beta1.PipelineRef{
 				Name: pipelineName,
 			},
 		},
 	}
-	meta, err := tektonClient.TektonV1beta1().PipelineRuns(namespace).Create(context.Background(), piplinerun, v1.CreateOptions{})
+	// 判断是否存在
+	piperun, err = tektonClient.TektonV1beta1().PipelineRuns(namespace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
-		klog.Fatal(err)
+		if errors.IsNotFound(err) {
+			_, err = tektonClient.TektonV1beta1().PipelineRuns(namespace).Create(context.Background(), piplinerun, v1.CreateOptions{})
+			if err != nil {
+				return res, err
+			}
+			return true, err
+		}
+		return res, err
 	}
-	klog.Info(meta)
+	piplinerun.ResourceVersion = piperun.ResourceVersion
+	_, err = tektonClient.TektonV1beta1().PipelineRuns(namespace).Update(context.Background(), piplinerun, v1.UpdateOptions{})
+	if err != nil {
+		return res, err
+	}
+
+	return true, err
 }

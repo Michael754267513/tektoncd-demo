@@ -20,6 +20,8 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"k8s.io/klog"
+	"tektoncd-demo/cicd/pipeline"
+	"tektoncd-demo/cicd/pipelinerun"
 	"tektoncd-demo/cicd/resource"
 	"tektoncd-demo/cicd/task"
 )
@@ -40,13 +42,50 @@ func main() {
 			},
 		}
 		inputs []v1beta1.TaskResource = []v1beta1.TaskResource{
-			{},
+			{
+				v1beta1.ResourceDeclaration{
+					Name: name,
+					Type: v1beta1.PipelineResourceTypeGit,
+				},
+			},
+		}
+		outputs []v1beta1.TaskResource = []v1beta1.TaskResource{}
+		params  []v1beta1.ParamSpec    = []v1beta1.ParamSpec{
+			{
+				Name:        "pathToContext",
+				Description: "The path to the build context, used by Kaniko - within the workspace",
+				Default:     v1beta1.NewArrayOrString("."),
+			},
+			{
+				Name:        "pathToDockerFile",
+				Description: "The path to the dockerfile to build (relative to the context)",
+				Default:     v1beta1.NewArrayOrString("src/Dockerfile"),
+			},
+			{
+				Name:        "imageUrl",
+				Description: "Url of image repository",
+				Default:     v1beta1.NewArrayOrString(""),
+			},
+			{
+				Name:        "imageTag",
+				Description: "Tag to apply to the built image",
+				Default:     v1beta1.NewArrayOrString("latest"),
+			},
 		}
 	)
 	// 创建资源
 	if res, err := resource.Resource(name, namespace, resourceType, resourceParams); !res {
-		klog.Fatal(err)
+		klog.Info(err)
 	}
-	task.SourceToImage(name, namespace)
+	// 创建task
+	if res, err := task.SourceToImage(name, namespace, inputs, outputs, params); !res {
+		klog.Info(err)
+	}
+	if res, err := pipeline.BuildPipeline(name, namespace, name); !res {
+		klog.Info(err)
+	}
+	if res, err := pipelinerun.Run(name, namespace, name); !res {
+		klog.Info(err)
+	}
 
 }

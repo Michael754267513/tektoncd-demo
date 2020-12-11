@@ -27,6 +27,9 @@ import (
 
 // 资源定义
 func Resource(name string, namespace string, resourceType v1alpha1.PipelineResourceType, params []v1alpha1.ResourceParam) (res bool, err error) {
+	var (
+		pipelineresource *v1alpha1.PipelineResource
+	)
 
 	// k8s 配置文件
 	restConfig, err := config.GetRestConf()
@@ -48,7 +51,7 @@ func Resource(name string, namespace string, resourceType v1alpha1.PipelineResou
 		Status: nil,
 	}
 	// 判断是否存在resource
-	_, err = tektonClient.TektonV1alpha1().PipelineResources(namespace).Get(context.Background(), name, v1.GetOptions{})
+	pipelineresource, err = tektonClient.TektonV1alpha1().PipelineResources(namespace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = tektonClient.TektonV1alpha1().PipelineResources(namespace).Create(context.Background(), pipresource, v1.CreateOptions{})
@@ -59,7 +62,7 @@ func Resource(name string, namespace string, resourceType v1alpha1.PipelineResou
 		}
 		return res, err
 	}
-
+	pipresource.ResourceVersion = pipelineresource.ResourceVersion
 	_, err = tektonClient.TektonV1alpha1().PipelineResources(namespace).Update(context.Background(), pipresource, v1.UpdateOptions{})
 	if err != nil {
 		return res, err

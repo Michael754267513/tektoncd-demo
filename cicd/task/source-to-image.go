@@ -20,6 +20,7 @@ import (
 	"context"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 
@@ -27,9 +28,10 @@ import (
 	"tektoncd-demo/config"
 )
 
-func SourceToImage(name string, namespace string, inputs []v1beta1.TaskResource, outputs []v1beta1.TaskResource, params []v1beta1.ParamSpec) {
+func SourceToImage(name string, namespace string, inputs []v1beta1.TaskResource, outputs []v1beta1.TaskResource, params []v1beta1.ParamSpec) (res bool, err error) {
 	var (
-		steps []v1beta1.Step
+		steps     []v1beta1.Step
+		task_meta *v1beta1.Task
 	)
 	// k8s 配置文件
 	restConfig, err := config.GetRestConf()
@@ -45,9 +47,9 @@ func SourceToImage(name string, namespace string, inputs []v1beta1.TaskResource,
 			Image:   "registry.cn-hangzhou.aliyuncs.com/knative-sample/kaniko-project-executor:v0.10.0",
 			Command: []string{"/kaniko/executor"},
 			Args: []string{
-				"--dockerfile=$(inputs.params.pathToDockerFile)",
-				"--destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)",
-				"--context=/workspace/git-source/$(inputs.params.pathToContext)",
+				"--dockerfile=$(params.pathToDockerFile)",
+				"--destination=$(params.imageUrl):$(inputs.params.imageTag)",
+				"--context=/$(params.pathToContext)",
 			},
 			// TODO
 			Env: []corev1.EnvVar{
@@ -55,6 +57,7 @@ func SourceToImage(name string, namespace string, inputs []v1beta1.TaskResource,
 			},
 		},
 	})
+
 	task := &v1beta1.Task{
 		TypeMeta: v1.TypeMeta{},
 		ObjectMeta: v1.ObjectMeta{
@@ -67,14 +70,27 @@ func SourceToImage(name string, namespace string, inputs []v1beta1.TaskResource,
 				Outputs: outputs,
 			},
 			Params:      params,
-			Description: "源编译成景象",
+			Description: "源编译",
 			Steps:       steps,
 		},
 	}
-	meta, err := tektonClient.TektonV1beta1().Tasks(name).Create(context.Background(), task, v1.CreateOptions{})
+
+	task_meta, err = tektonClient.TektonV1beta1().Tasks(namespace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
-		klog.Fatal(err)
+		if errors.IsNotFound(err) {
+			_, err = tektonClient.TektonV1beta1().Tasks(namespace).Create(context.Background(), task, v1.CreateOptions{})
+			if err != nil {
+				return res, err
+			}
+			return true, err
+		}
+		return res, err
 	}
-	klog.Info(meta)
+	task.ResourceVersion = task_meta.ResourceVersion
+	_, err = tektonClient.TektonV1beta1().Tasks(namespace).Update(context.Background(), task, v1.UpdateOptions{})
+	if err != nil {
+		return false, err
+	}
+	return true, err
 
 }
