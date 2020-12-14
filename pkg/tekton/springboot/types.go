@@ -64,7 +64,7 @@ func (sb *SpringBoot) Clone() (err error) {
 	var (
 		steps []v1beta1.Step
 	)
-	sb.Name = sb.Name + "-" + "clone"
+	name := sb.Name + "-" + "clone"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
@@ -79,7 +79,7 @@ func (sb *SpringBoot) Clone() (err error) {
 	task := &v1beta1.Task{
 		TypeMeta: v1.TypeMeta{},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      sb.Name,
+			Name:      name,
 			Namespace: sb.NameSpace,
 		},
 		Spec: v1beta1.TaskSpec{
@@ -88,7 +88,7 @@ func (sb *SpringBoot) Clone() (err error) {
 		},
 	}
 
-	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{})
+	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
@@ -112,7 +112,7 @@ func (sb *SpringBoot) Make() (err error) {
 	var (
 		steps []v1beta1.Step
 	)
-	sb.Name = sb.Name + "-" + "make"
+	name := sb.Name + "-" + "make"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
@@ -127,7 +127,7 @@ func (sb *SpringBoot) Make() (err error) {
 	task := &v1beta1.Task{
 		TypeMeta: v1.TypeMeta{},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      sb.Name,
+			Name:      name,
 			Namespace: sb.NameSpace,
 		},
 		Spec: v1beta1.TaskSpec{
@@ -136,7 +136,7 @@ func (sb *SpringBoot) Make() (err error) {
 		},
 	}
 
-	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{})
+	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
@@ -160,7 +160,7 @@ func (sb *SpringBoot) BuildImage() (err error) {
 	var (
 		steps []v1beta1.Step
 	)
-	sb.Name = sb.Name + "-" + "buildimage"
+	name := sb.Name + "-" + "buildimage"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
@@ -175,7 +175,7 @@ func (sb *SpringBoot) BuildImage() (err error) {
 	task := &v1beta1.Task{
 		TypeMeta: v1.TypeMeta{},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      sb.Name,
+			Name:      name,
 			Namespace: sb.NameSpace,
 		},
 		Spec: v1beta1.TaskSpec{
@@ -184,7 +184,7 @@ func (sb *SpringBoot) BuildImage() (err error) {
 		},
 	}
 
-	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{})
+	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
@@ -208,7 +208,7 @@ func (sb *SpringBoot) Notice() (err error) {
 	var (
 		steps []v1beta1.Step
 	)
-	sb.Name = sb.Name + "-" + "notice"
+	name := sb.Name + "-" + "notice"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
@@ -223,7 +223,7 @@ func (sb *SpringBoot) Notice() (err error) {
 	task := &v1beta1.Task{
 		TypeMeta: v1.TypeMeta{},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      sb.Name,
+			Name:      name,
 			Namespace: sb.NameSpace,
 		},
 		Spec: v1beta1.TaskSpec{
@@ -232,7 +232,7 @@ func (sb *SpringBoot) Notice() (err error) {
 		},
 	}
 
-	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{})
+	task_meta, err := sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Get(context.Background(), name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
@@ -256,12 +256,16 @@ func (sb *SpringBoot) Notice() (err error) {
 
 func (sb *SpringBoot) Run() (err error) {
 	if sb.Clone() == nil {
+
 	}
 	if sb.Make() == nil {
+
 	}
 	if sb.BuildImage() == nil {
+
 	}
 	if sb.Notice() == nil {
+
 	}
 
 	return

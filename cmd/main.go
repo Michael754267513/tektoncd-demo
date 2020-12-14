@@ -38,6 +38,8 @@ func main() {
 	spboot := springboot.SpringBoot{
 		Name:                 "wolong",
 		NameSpace:            "test",
+		Revision:             "Master",
+		Url:                  "https://www.a.com",
 		TektonClient:         tektonClient,
 		TektonClientResource: tektonClientRes,
 	}
