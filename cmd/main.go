@@ -43,6 +43,7 @@ func main() {
 		TektonClient:         tektonClient,
 		TektonClientResource: tektonClientRes,
 	}
+
 	var cicd tekton.CICD
 	cicd = &spboot
 	if err = cicd.Run(); err != nil {

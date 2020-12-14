@@ -52,24 +52,27 @@ func (sb *SpringBoot) CodeQuqlity() (err error) {
 	panic("implement me")
 }
 
+// 发布
 func (sb *SpringBoot) Deploy() (err error) {
 	panic("implement me")
 }
 
+// 资源清理
 func (sb *SpringBoot) Clean() (err error) {
 	panic("implement me")
 }
 
-func (sb *SpringBoot) Clone() (err error) {
+// 代码克隆
+func (sb *SpringBoot) Clone() (err error, name string) {
 	var (
 		steps []v1beta1.Step
 	)
-	name := sb.Name + "-" + "clone"
+	name = sb.Name + "-" + "clone"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
 			Image:   "busybox",
-			Command: []string{"/usr/bin/echo"},
+			Command: []string{"echo"},
 			Args: []string{
 				" 代码克隆clone",
 			},
@@ -93,31 +96,32 @@ func (sb *SpringBoot) Clone() (err error) {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
 			if err != nil {
-				return err
+				return
 			}
-			return err
+			return
 		}
-		return err
+		return
 	}
 
 	task.ResourceVersion = task_meta.ResourceVersion
 	_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Update(context.Background(), task, v1.UpdateOptions{})
 	if err != nil {
-		return err
+		return
 	}
 	return
 }
 
-func (sb *SpringBoot) Make() (err error) {
+// 编译代码
+func (sb *SpringBoot) Make() (err error, name string) {
 	var (
 		steps []v1beta1.Step
 	)
-	name := sb.Name + "-" + "make"
+	name = sb.Name + "-" + "make"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
 			Image:   "busybox",
-			Command: []string{"/usr/bin/echo"},
+			Command: []string{"echo"},
 			Args: []string{
 				"Make",
 			},
@@ -141,31 +145,32 @@ func (sb *SpringBoot) Make() (err error) {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
 			if err != nil {
-				return err
+				return err, name
 			}
-			return err
+			return err, name
 		}
-		return err
+		return err, name
 	}
 
 	task.ResourceVersion = task_meta.ResourceVersion
 	_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Update(context.Background(), task, v1.UpdateOptions{})
 	if err != nil {
-		return err
+		return err, name
 	}
 	return
 }
 
-func (sb *SpringBoot) BuildImage() (err error) {
+// 打包镜像
+func (sb *SpringBoot) BuildImage() (err error, name string) {
 	var (
 		steps []v1beta1.Step
 	)
-	name := sb.Name + "-" + "buildimage"
+	name = sb.Name + "-" + "buildimage"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
 			Image:   "busybox",
-			Command: []string{"/usr/bin/echo"},
+			Command: []string{"echo"},
 			Args: []string{
 				"Make",
 			},
@@ -189,21 +194,22 @@ func (sb *SpringBoot) BuildImage() (err error) {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
 			if err != nil {
-				return err
+				return
 			}
-			return err
+			return
 		}
-		return err
+		return
 	}
 
 	task.ResourceVersion = task_meta.ResourceVersion
 	_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Update(context.Background(), task, v1.UpdateOptions{})
 	if err != nil {
-		return err
+		return
 	}
 	return
 }
 
+// 消息通知
 func (sb *SpringBoot) Notice() (err error) {
 	var (
 		steps []v1beta1.Step
@@ -213,7 +219,7 @@ func (sb *SpringBoot) Notice() (err error) {
 		Container: corev1.Container{
 			Name:    "clone",
 			Image:   "busybox",
-			Command: []string{"/usr/bin/echo"},
+			Command: []string{"echo"},
 			Args: []string{
 				"notice",
 			},
@@ -237,36 +243,76 @@ func (sb *SpringBoot) Notice() (err error) {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Create(context.Background(), task, v1.CreateOptions{})
 			if err != nil {
-				return err
+				return
 			}
-			return err
+			return
 		}
-		return err
+		return
 	}
 
 	task.ResourceVersion = task_meta.ResourceVersion
 	_, err = sb.TektonClient.TektonV1beta1().Tasks(sb.NameSpace).Update(context.Background(), task, v1.UpdateOptions{})
 	if err != nil {
-		return err
+		return
 	}
 	return
 
 	// 项目阶段消息发送
 }
 
+// 运行整个流程
 func (sb *SpringBoot) Run() (err error) {
-	if sb.Clone() == nil {
-
-	}
-	if sb.Make() == nil {
-
-	}
-	if sb.BuildImage() == nil {
-
-	}
-	if sb.Notice() == nil {
-
+	err, clone_name := sb.Clone()
+	if err != nil {
 	}
 
+	err, make_name := sb.Make()
+	if err != nil {
+	}
+
+	err, buildimage_name := sb.BuildImage()
+	if err != nil {
+	}
+
+	piplinerun := &v1beta1.PipelineRun{
+		TypeMeta: v1.TypeMeta{},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      sb.Name,
+			Namespace: sb.NameSpace,
+		},
+		Spec: v1beta1.PipelineRunSpec{
+			PipelineSpec: &v1beta1.PipelineSpec{
+				Description: "pipline " + sb.Name,
+				Tasks: []v1beta1.PipelineTask{
+					{
+						Name: clone_name,
+						TaskRef: &v1beta1.TaskRef{
+							Name: clone_name,
+						},
+					},
+					{
+						Name: make_name,
+						TaskRef: &v1beta1.TaskRef{
+							Name: make_name,
+						},
+						RunAfter: []string{clone_name},
+					},
+					{
+						Name: buildimage_name,
+						TaskRef: &v1beta1.TaskRef{
+							Name: buildimage_name,
+						},
+						RunAfter: []string{make_name},
+					},
+				},
+				Finally: nil,
+			},
+		},
+	}
+
+	_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Create(context.Background(), piplinerun, v1.CreateOptions{})
+	if err != nil {
+		return
+	}
 	return
 }

@@ -17,10 +17,10 @@ limitations under the License.
 package tekton
 
 type CICD interface {
-	Clone() (err error)      // 代码克隆
-	Make() (err error)       // 代码编译
-	BuildImage() (err error) // 编译镜像
-	Cache() (err error)      // 缓存cache
+	Clone() (err error, name string)      // 代码克隆
+	Make() (err error, name string)       // 代码编译
+	BuildImage() (err error, name string) // 编译镜像
+	Cache() (err error)                   // 缓存cache
 
 	Scan() (err error)        // 代码扫描
 	UnitTest() (err error)    // 单元测试
