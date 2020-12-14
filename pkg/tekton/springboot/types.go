@@ -310,9 +310,20 @@ func (sb *SpringBoot) Run() (err error) {
 		},
 	}
 
-	_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Create(context.Background(), piplinerun, v1.CreateOptions{})
-	if err != nil {
+	sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Delete(context.Background(), sb.Name, v1.DeleteOptions{})
+	if _, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{}); err != nil {
+		if errors.IsNotFound(err) {
+			_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Create(context.Background(), piplinerun, v1.CreateOptions{})
+			if err != nil {
+				return
+			}
+		}
 		return
 	}
+
+	//_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Create(context.Background(), piplinerun, v1.CreateOptions{})
+	//if err != nil {
+	//	return
+	//}
 	return
 }
