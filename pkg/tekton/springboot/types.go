@@ -211,11 +211,11 @@ func (sb *SpringBoot) BuildImage() (err error, name string) {
 }
 
 // 消息通知
-func (sb *SpringBoot) Notice() (err error) {
+func (sb *SpringBoot) Notice() (err error, name string) {
 	var (
 		steps []v1beta1.Step
 	)
-	name := sb.Name + "-" + "notice"
+	name = sb.Name + "-" + "notice"
 	steps = append(steps, v1beta1.Step{
 		Container: corev1.Container{
 			Name:    "clone",
@@ -279,6 +279,10 @@ func (sb *SpringBoot) Run() (err error) {
 	if err != nil {
 	}
 
+	err, notice := sb.Notice()
+	if err != nil {
+	}
+
 	piplinerun := &v1beta1.PipelineRun{
 		TypeMeta: v1.TypeMeta{},
 		ObjectMeta: v1.ObjectMeta{
@@ -331,7 +335,15 @@ func (sb *SpringBoot) Run() (err error) {
 						RunAfter: []string{make_name},
 					},
 				},
-				Finally: nil,
+				Finally: []v1beta1.PipelineTask{
+
+					{
+						Name: notice,
+						TaskRef: &v1beta1.TaskRef{
+							Name: notice,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -354,7 +366,6 @@ func (sb *SpringBoot) Run() (err error) {
 		return
 	} else {
 		piplinerun.ResourceVersion = piperun.ResourceVersion
-
 		_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Update(context.Background(), piplinerun, v1.UpdateOptions{})
 		if err != nil {
 			return

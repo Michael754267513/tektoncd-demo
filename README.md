@@ -30,5 +30,6 @@ const (
 )
 ```
 ## TODO
-*  DAG 状态--> 根据when --> 判断流程走到哪里
+*  DAG 状态--> 根据when --> 判断流程走到哪里(完成)
+*  pipeline 状态回调
 

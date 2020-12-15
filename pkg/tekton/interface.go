@@ -28,7 +28,7 @@ type CICD interface {
 
 	Deploy() (err error) // 部署
 
-	Notice() (err error) // 消息通知
-	Clean() (err error)  // 资源清理
-	Run() (err error)    // 运行pipline
+	Notice() (err error, name string) // 消息通知
+	Clean() (err error)               // 资源清理
+	Run() (err error)                 // 运行pipline
 }
