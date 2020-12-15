@@ -348,7 +348,7 @@ func (sb *SpringBoot) Run() (err error) {
 		},
 	}
 
-	// 删除run
+	//// 删除run
 	sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Delete(context.Background(), sb.Name, v1.DeleteOptions{})
 	for {
 		_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{})
