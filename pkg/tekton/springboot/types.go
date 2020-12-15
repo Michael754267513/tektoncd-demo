@@ -24,16 +24,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/selection"
 )
 
 type SpringBoot struct {
 	Name                 string                 `json:"name"`                   // 包名
 	Url                  string                 `json:"url"`                    // 代码地址
 	Revision             string                 `json:"revision"`               // 代码分支
+	Status               string                 `json:"status"`                 // 状态码用于dag
 	TektonClient         *versioned.Clientset   `json:"tekton_client"`          // tekton client
 	TektonClientResource *tknResource.Clientset `json:"tekton_client_resource"` // tekton resource client
 	NameSpace            string                 `json:"namespace"`              // 运行环境
-
 }
 
 func (sb *SpringBoot) Cache() (err error) {
@@ -262,6 +263,10 @@ func (sb *SpringBoot) Notice() (err error) {
 
 // 运行整个流程
 func (sb *SpringBoot) Run() (err error) {
+	var (
+		piperun *v1beta1.PipelineRun
+	)
+
 	err, clone_name := sb.Clone()
 	if err != nil {
 	}
@@ -289,11 +294,25 @@ func (sb *SpringBoot) Run() (err error) {
 						TaskRef: &v1beta1.TaskRef{
 							Name: clone_name,
 						},
+						WhenExpressions: []v1beta1.WhenExpression{
+							{
+								Input:    sb.Status,
+								Operator: selection.In,
+								Values:   []string{"0", "10", "20"},
+							},
+						},
 					},
 					{
 						Name: make_name,
 						TaskRef: &v1beta1.TaskRef{
 							Name: make_name,
+						},
+						WhenExpressions: []v1beta1.WhenExpression{
+							{
+								Input:    sb.Status,
+								Operator: selection.In,
+								Values:   []string{"0", "10", "20"},
+							},
 						},
 						RunAfter: []string{clone_name},
 					},
@@ -301,6 +320,13 @@ func (sb *SpringBoot) Run() (err error) {
 						Name: buildimage_name,
 						TaskRef: &v1beta1.TaskRef{
 							Name: buildimage_name,
+						},
+						WhenExpressions: []v1beta1.WhenExpression{
+							{
+								Input:    sb.Status,
+								Operator: selection.In,
+								Values:   []string{"10", "20"},
+							},
 						},
 						RunAfter: []string{make_name},
 					},
@@ -310,8 +336,15 @@ func (sb *SpringBoot) Run() (err error) {
 		},
 	}
 
+	// 删除run
 	sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Delete(context.Background(), sb.Name, v1.DeleteOptions{})
-	if _, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{}); err != nil {
+	for {
+		_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{})
+		if errors.IsNotFound(err) {
+			break
+		}
+	}
+	if piperun, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Get(context.Background(), sb.Name, v1.GetOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Create(context.Background(), piplinerun, v1.CreateOptions{})
 			if err != nil {
@@ -319,11 +352,13 @@ func (sb *SpringBoot) Run() (err error) {
 			}
 		}
 		return
-	}
+	} else {
+		piplinerun.ResourceVersion = piperun.ResourceVersion
 
-	//_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Create(context.Background(), piplinerun, v1.CreateOptions{})
-	//if err != nil {
-	//	return
-	//}
+		_, err = sb.TektonClient.TektonV1beta1().PipelineRuns(sb.NameSpace).Update(context.Background(), piplinerun, v1.UpdateOptions{})
+		if err != nil {
+			return
+		}
+	}
 	return
 }

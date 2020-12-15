@@ -15,6 +15,20 @@ pipline v0.18.1
 * taskrun client go demo
 * cmd和pkg 自行封装CICD流程demo 
 
+## when 表达式
+```cassandraql
+const (
+	DoesNotExist Operator = "!"
+	Equals       Operator = "="
+	DoubleEquals Operator = "=="
+	In           Operator = "in"
+	NotEquals    Operator = "!="
+	NotIn        Operator = "notin"
+	Exists       Operator = "exists"
+	GreaterThan  Operator = "gt"
+	LessThan     Operator = "lt"
+)
+```
 ## TODO
 *  DAG 状态--> 根据when --> 判断流程走到哪里
 

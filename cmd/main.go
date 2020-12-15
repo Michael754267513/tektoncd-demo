@@ -39,6 +39,7 @@ func main() {
 		Name:                 "wolong",
 		NameSpace:            "test",
 		Revision:             "Master",
+		Status:               "10",
 		Url:                  "https://www.a.com",
 		TektonClient:         tektonClient,
 		TektonClientResource: tektonClientRes,
